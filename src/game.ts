@@ -30,7 +30,7 @@ export async function run(element: HTMLCanvasElement) {
     const eaten = document.querySelector<HTMLSpanElement>("#eaten")!;
     const longnehead = document.querySelector<HTMLImageElement>("#longnehead")!;
     const longnelegs = document.querySelector<HTMLImageElement>("#longnelegs")!;
-    const longneneck = document.querySelector<HTMLImageElement>("#longneneck")!;
+    // const longneneck = document.querySelector<HTMLImageElement>("#longneneck")!;
     const longnetail = document.querySelector<HTMLImageElement>("#longnetail")!;
     const longneturn = document.querySelector<HTMLImageElement>("#longneturn")!;
     const smork = document.querySelector<HTMLImageElement>("#smork")!;
