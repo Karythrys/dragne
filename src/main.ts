@@ -1,5 +1,5 @@
 import "./style.css";
-import { run } from "./game.ts";
+import { run } from "./game.js";
 import longnehead from "/longnehead.png?url";
 import longnelegs from "/longnelegs.png?url";
 import longneneck from "/longneneck.png?url";
