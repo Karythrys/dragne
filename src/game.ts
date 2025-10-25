@@ -260,7 +260,7 @@ export async function run(element: HTMLCanvasElement) {
         for (let y = 0; y < grid.length; y++) for (let x = 0; x < (grid.at(y)?.length ?? 0); x++) if (grid.at(y)?.at(x)) {
             const coordinates = pointToCoordinates(new Point(x, y));
             // context!.fillStyle = "#ffffff";
-            context?.drawImage(orange, 0, -4, (orange.width) + 8, (orange.height >> 1) + 8, coordinates.x + (TILE_SIZE >> 2), coordinates.y + (TILE_SIZE >> 2), TILE_SIZE >> 1, TILE_SIZE >> 1);
+            context?.drawImage(orange, coordinates.x + (TILE_SIZE >> 2), coordinates.y + (TILE_SIZE >> 2), TILE_SIZE >> 1, TILE_SIZE >> 1);
         }
     }
 
