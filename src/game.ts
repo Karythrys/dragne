@@ -82,10 +82,11 @@ export async function run(element: HTMLCanvasElement) {
         eaten.innerText = `${count}`;
         speed = Math.log(count + 1) + 1;
 
-        free.push(oranges.at(index)!);
+        free.push(point);
         oranges.splice(index, 1);
         // grid[point.y][point.x] = false;
-        const orange = randomOrange();
+        let orange: Point = randomOrange();
+        while (orange.x === point.x && orange.y === point.y) orange = randomOrange();
         const found = free.findIndex(p => p === orange);
         free.splice(found, 1);
         oranges.push(orange);
