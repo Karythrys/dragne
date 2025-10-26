@@ -27,6 +27,8 @@ export class Point {
 export async function run(element: HTMLCanvasElement) {
     const context = element.getContext("2d", { alpha: true });
 
+    const width = Math.floor(element.width / TILE_SIZE);
+    const height = Math.floor(element.height / TILE_SIZE);
     const eaten = document.querySelector<HTMLSpanElement>("#eaten")!;
     const longnehead = document.querySelector<HTMLImageElement>("#longnehead")!;
     const longnelegs = document.querySelector<HTMLImageElement>("#longnelegs")!;
@@ -48,35 +50,46 @@ export async function run(element: HTMLCanvasElement) {
     let dead = false;
     let restart = false;
 
-    const grid = Array(Math.floor(element.width / TILE_SIZE)).fill("").map(() => Array(Math.floor(element.height / TILE_SIZE)).fill("").map(() => false));
+    // const grid = Array(height).fill("").map(() => Array(width).fill("").map(() => false));
+    const free = Array(width * height).fill("").map((_, i) => new Point(i % width, Math.floor(i / height)));
     const tail = [
-        new Point((grid.at(0)?.length ?? 0) >> 1, grid.length >> 1),
-        new Point(((grid.at(0)?.length ?? 0) >> 1) + 1, grid.length >> 1),
+        new Point((width ?? 0) >> 1, height >> 1),
+        new Point(((width ?? 0) >> 1) + 1, height >> 1),
     ];
+    const oranges: Array<Point> = [];
 
     function pointToCoordinates(point: Point) {
         return new Point(point.x * TILE_SIZE, point.y * TILE_SIZE);
     }
 
     function randomOrange() {
-        const x = Math.floor(Math.random() * (grid.at(0)?.length ?? 0));
-        const y = Math.floor(Math.random() * grid.length);
+        return free[Math.floor(Math.random() * free.length)];
+
+        const x = Math.floor(Math.random() * (width ?? 0));
+        const y = Math.floor(Math.random() * height);
 
         if (x === tail.at(0)?.x && y === tail.at(0)?.y) return new Point(x > 0 ? x - 1 : x + 1, y);
         return new Point(x, y);
     }
 
     function eat(point: Point): boolean {
-        if (!grid.at(point.y)?.at(point.x)) return false;
+        const index = oranges.findIndex(p => p.x === point.x && p.y === point.y);
+        if (index === -1) return false;
+        // if (!grid.at(point.y)?.at(point.x)) return false;
 
         ate = true;
         count++;
         eaten.innerText = `${count}`;
         speed = Math.log(count + 1) + 1;
 
-        grid[point.y][point.x] = false;
+        free.push(oranges.at(index)!);
+        oranges.splice(index, 1);
+        // grid[point.y][point.x] = false;
         const orange = randomOrange();
-        grid[orange.y][orange.x] = true;
+        const found = free.findIndex(p => p === orange);
+        free.splice(found, 1);
+        oranges.push(orange);
+        // grid[orange.y][orange.x] = true;
         return true;
     }
 
@@ -256,18 +269,27 @@ export async function run(element: HTMLCanvasElement) {
         context?.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    function drawOranges(grid: Array<Array<boolean>>) {
-        for (let y = 0; y < grid.length; y++) for (let x = 0; x < (grid.at(y)?.length ?? 0); x++) if (grid.at(y)?.at(x)) {
-            const coordinates = pointToCoordinates(new Point(x, y));
-            // context!.fillStyle = "#ffffff";
+    function drawOranges(oranges: Array<Point>) {
+        for (const point of oranges) {
+            const coordinates = pointToCoordinates(point);
             context?.drawImage(orange, coordinates.x + (TILE_SIZE >> 2), coordinates.y + (TILE_SIZE >> 2), TILE_SIZE >> 1, TILE_SIZE >> 1);
         }
     }
 
+    for (const point of tail) {
+        const index = free.findIndex(p => p.x === point.x && p.y === point.y);
+        if (index !== -1) free.splice(index, 1);
+    }
+
     for (let i = 0; i < ORANGES; i++) {
         const orange = randomOrange();
-        if (grid.at(orange.y)?.at(orange.x) === false) grid[orange.y][orange.x] = true;
-        else i--;
+
+        const index = free.findIndex(p => p === orange);
+        if (index === -1) throw new Error();
+        free.splice(index, 1);
+        oranges.push(orange);
+        // if (grid.at(orange.y)?.at(orange.x) === false) grid[orange.y][orange.x] = true;
+        // else i--;
     }
 
     window.addEventListener("keydown", event => {
@@ -369,22 +391,28 @@ export async function run(element: HTMLCanvasElement) {
 
             if (
                 move.x < 0
-                || move.x >= (grid.at(0)?.length ?? 0)
+                || move.x >= width
                 || move.y < 0
-                || move.y >= grid.length
+                || move.y >= height
                 || tail.findIndex(point => point.x === move.x && point.y === move.y) !== -1
             ) dead = true;
             else {
                 ate = false;
+                if (!eat(move)) {
+                    const end = tail.pop();
+                    if (end !== undefined && !(end.x === move.x && end.y === move.y)) free.push(end);
+                }
+                const found = free.findIndex(p => p.x === move.x && p.y === move.y);
+                if (found === -1) throw new Error();
+                free.splice(found, 1);
                 tail.unshift(move);
-                if (!eat(move)) tail.pop();
             }
         }
 
         context?.clearRect(0, 0, element.width, element.height);
 
         drawTail(tail);
-        drawOranges(grid);
+        drawOranges(oranges);
 
         if (dead) {
             if (ghost < 4) ghost += GHOST_SPEED * scalar;
@@ -393,7 +421,7 @@ export async function run(element: HTMLCanvasElement) {
             context?.drawImage(dragneghost, (element.width >> 1) - (size / 2), (element.height >> 1) - (size / 2), size, size);
         }
 
-        setTimeout(() => requestAnimationFrame(update), 10);
+        requestAnimationFrame(update);
     }
 
     update(lastTick);
